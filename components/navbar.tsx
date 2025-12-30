@@ -8,7 +8,7 @@ export function Navbar() {
         <h3 className="text-md  tracking-tight ">sniplink</h3>
         <Link href={`/signin`}>
           <Button size={"sm"} variant={"outline"}>
-            Login
+            Sign In
           </Button>
         </Link>
       </div>
