@@ -12,20 +12,27 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signup } from "@/services/auth-service";
+import { requestOtp, verifyOtp } from "@/services/otp-service";
 import Link from "next/link";
 import { useState } from "react";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "./ui/input-otp";
 
 interface SignupFormProps {
   onSuccess: () => void;
 }
 
+type Step = "email" | "otp" | "details";
+
 export default function SignupForm({ onSuccess }: SignupFormProps) {
+  const [step, setStep] = useState<Step>("email");
   const [formData, setFormData] = useState({
     firstname: "",
     lastname: "",
     email: "",
     password: "",
   });
+  const [otp, setOtp] = useState("");
+  const [verificationToken, setVerificationToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,101 +43,212 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
     });
   };
 
+  const handleOtpRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const response = await requestOtp({ email: formData.email });
+      console.log("OTP sent", response);
+    } catch (err: any) {
+      setError(err.message || "Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const response = await verifyOtp({ email: formData.email, otp });
+      setVerificationToken(response.data.verificationToken);
+      console.log("OTP verified:", response);
+    } catch (err: any) {
+      setError(err.message || "Failed to verify OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      const result = await signup(formData);
+      const result = await signup(formData, verificationToken);
       console.log("Signup Success: ", result);
 
       onSuccess();
     } catch (err: any) {
       setError(err.response?.message || `Signup failed`);
+      console.log("error", error);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleBackToEmail = () => {
+    setStep("email");
+    setOtp("");
+    setError(null);
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <form
-        className="w-full flex items-center justify-center"
-        onSubmit={handleSubmit}
-      >
-        <Card className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle>Create new account</CardTitle>
-            <CardDescription>
-              Enter your credentials below to create your account
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-6">
-              {/* Firstname */}
-              <div className="grid gap-2">
-                <Label htmlFor="firstname">First Name</Label>
-                <Input
-                  id="firstname"
-                  type="text"
-                  placeholder="Enter your first name"
-                  value={formData.firstname}
-                  onChange={handleChange}
-                />
-              </div>
-
-              {/* Lastname */}
-              <div className="grid gap-2">
-                <Label htmlFor="lastname">Last Name</Label>
-                <Input
-                  id="lastname"
-                  type="text"
-                  placeholder="Enter your last name"
-                  value={formData.lastname}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+      <Card className="w-full max-w-sm">
+        {step === "email" && (
+          <form onSubmit={handleOtpRequest}>
+            <CardHeader>
+              <CardTitle>Create new account</CardTitle>
+              <CardDescription>Enter your email to get started</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-6">
+                <div className="grid gap-2 mt-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="m@example.com"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                  />
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                />
+                {error && <p className="text-sm text-red-500">{error}</p>}
               </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex-col gap-2">
-            <Button type="submit" className="w-full">
-              Login
-            </Button>
-            <div className="flex items-center text-sm">
-              <p>Already have an account? </p>
-              <Link href={"/signin"}>
-                <Button className="underline" variant="link" disabled={loading}>
-                  {loading ? "Signing Up...." : "Sign Up"}
-                </Button>
-              </Link>
-            </div>
-          </CardFooter>
-        </Card>
-      </form>
+            </CardContent>
+            <CardFooter className="flex-col gap-2 mt-4">
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Sending OTP..." : "Get OTP"}
+              </Button>
+              <div className="flex items-center text-sm">
+                <p>Already have an account? </p>
+                <Link href={"/signin"}>
+                  <Button variant="link" className="underline">
+                    Sign In
+                  </Button>
+                </Link>
+              </div>
+            </CardFooter>
+          </form>
+        )}
+
+        {step === "otp" && (
+          <form onSubmit={handleVerifyOtp}>
+            <CardHeader>
+              <CardTitle>Verify OTP</CardTitle>
+              <CardDescription>
+                Enter the OTP sent to {formData.email}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-6">
+                <div className="grid gap-4">
+                  <Label htmlFor="otp">One-Time Password</Label>
+                  <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+                {error && <p className="text-sm text-red-500">{error}</p>}
+              </div>
+            </CardContent>
+            <CardFooter className="flex-col gap-2">
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading || otp.length !== 6}
+              >
+                {loading ? "Verifying..." : "Verify OTP"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full bg-transparent"
+                onClick={handleBackToEmail}
+                disabled={loading}
+              >
+                Back
+              </Button>
+            </CardFooter>
+          </form>
+        )}
+
+        {step === "details" && (
+          <form onSubmit={handleSubmit}>
+            <CardHeader>
+              <CardTitle>Complete your profile</CardTitle>
+              <CardDescription>
+                Enter your details to complete signup
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="firstname">First Name</Label>
+                  <Input
+                    id="firstname"
+                    type="text"
+                    placeholder="Enter your first name"
+                    required
+                    value={formData.firstname}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="lastname">Last Name</Label>
+                  <Input
+                    id="lastname"
+                    type="text"
+                    placeholder="Enter your last name"
+                    required
+                    value={formData.lastname}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter a strong password"
+                    required
+                    value={formData.password}
+                    onChange={handleChange}
+                  />
+                </div>
+                {error && <p className="text-sm text-red-500">{error}</p>}
+              </div>
+            </CardContent>
+            <CardFooter className="flex-col gap-2">
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Creating account..." : "Create Account"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full bg-transparent"
+                onClick={handleBackToEmail}
+                disabled={loading}
+              >
+                Back
+              </Button>
+            </CardFooter>
+          </form>
+        )}
+      </Card>
     </div>
   );
 }
