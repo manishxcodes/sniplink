@@ -8,7 +8,7 @@ export default function Home() {
       <h1 className="scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance mb-10">
         Smarter Links for a Faster Web
       </h1>
-      <p className="leading-7 mb-5">
+      <p className="leading-7 mb-5 px-2 text-sm md:text-md">
         Shorten long URLs and take control of every link you share.
       </p>
       <Link href={"/signup"}>
