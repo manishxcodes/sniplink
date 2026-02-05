@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
+    <div className="flex flex-col min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black ">
       <h1 className="scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance mb-10">
         Smarter Links for a Faster Web
       </h1>
