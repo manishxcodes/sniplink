@@ -16,6 +16,7 @@ import { requestOtp, verifyOtp } from "@/services/otp-service";
 import Link from "next/link";
 import { useState } from "react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "./ui/input-otp";
+import { toast } from "sonner";
 
 interface SignupFormProps {
   onSuccess: () => void;
@@ -50,9 +51,16 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
 
     try {
       const response = await requestOtp({ email: formData.email });
-      console.log("OTP sent", response);
+      ////console.log("OTP sent", response);
+      if (response) {
+        toast.success("OTP sent");
+        setStep("otp");
+      }
+      //console.log("response: ", response);
     } catch (err: any) {
-      setError(err.message || "Failed to send OTP");
+      setError(err.response.data.message || "Failed to send OTP");
+      toast.error(err.response.data?.message);
+      //console.log("error: ", err);
     } finally {
       setLoading(false);
     }
@@ -66,9 +74,14 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
     try {
       const response = await verifyOtp({ email: formData.email, otp });
       setVerificationToken(response.data.verificationToken);
-      console.log("OTP verified:", response);
+      if (response) {
+        toast.success("OTP verified");
+        setStep("details");
+      }
+      //console.log("OTP verified:", response);
     } catch (err: any) {
       setError(err.message || "Failed to verify OTP");
+      toast.error(err.response.data?.message);
     } finally {
       setLoading(false);
     }
@@ -81,12 +94,13 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
 
     try {
       const result = await signup(formData, verificationToken);
-      console.log("Signup Success: ", result);
-
+      //console.log("Signup Success: ", result);
+      toast.success("Signup Successfull");
       onSuccess();
     } catch (err: any) {
       setError(err.response?.message || `Signup failed`);
-      console.log("error", error);
+      //console.log("error", error);
+      toast.error("Failed to Signup");
     } finally {
       setLoading(false);
     }
@@ -143,15 +157,19 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           <form onSubmit={handleVerifyOtp}>
             <CardHeader>
               <CardTitle>Verify OTP</CardTitle>
-              <CardDescription>
+              <CardDescription className="mb-2">
                 Enter the OTP sent to {formData.email}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col gap-6">
-                <div className="grid gap-4">
-                  <Label htmlFor="otp">One-Time Password</Label>
-                  <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+              <div className="flex items-center justify-center">
+                <div className="flex flex-col gap-6 items-center">
+                  <InputOTP
+                    maxLength={6}
+                    value={otp}
+                    onChange={setOtp}
+                    className="mx-auto"
+                  >
                     <InputOTPGroup>
                       <InputOTPSlot index={0} />
                       <InputOTPSlot index={1} />
@@ -165,7 +183,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
                 {error && <p className="text-sm text-red-500">{error}</p>}
               </div>
             </CardContent>
-            <CardFooter className="flex-col gap-2">
+            <CardFooter className="flex-col gap-2 mt-4">
               <Button
                 type="submit"
                 className="w-full"
@@ -190,7 +208,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           <form onSubmit={handleSubmit}>
             <CardHeader>
               <CardTitle>Complete your profile</CardTitle>
-              <CardDescription>
+              <CardDescription className="mb-4">
                 Enter your details to complete signup
               </CardDescription>
             </CardHeader>
@@ -232,7 +250,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
                 {error && <p className="text-sm text-red-500">{error}</p>}
               </div>
             </CardContent>
-            <CardFooter className="flex-col gap-2">
+            <CardFooter className="flex-col gap-2 mt-4">
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Creating account..." : "Create Account"}
               </Button>

@@ -15,6 +15,7 @@ import { signin } from "@/services/auth-service";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function SigninForm({ onSuccess }: { onSuccess: () => void }) {
   const router = useRouter();
@@ -34,18 +35,20 @@ export default function SigninForm({ onSuccess }: { onSuccess: () => void }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("form data", formData);
+    //console.log("form data", formData);
 
     setError(null);
     setLoading(true);
 
     try {
       const result = await signin(formData);
-      console.log("Signin Success: ", result);
+      //console.log("Signin Success: ", result);
+      router.push("/dashboard");
 
       onSuccess();
     } catch (err: any) {
-      setError(err.response?.message || `Signup failed`);
+      setError(err.response?.data?.message || `Signup failed`);
+      toast.error("Signup failed. Try again.");
     } finally {
       setLoading(false);
     }
@@ -98,7 +101,7 @@ export default function SigninForm({ onSuccess }: { onSuccess: () => void }) {
             <div className="flex items-center text-sm">
               <p>Don't have an account? </p>
               <Link href={"/signup"}>
-                <Button className="underline" variant="link">
+                <Button className="underline" variant="link" disabled={loading}>
                   Sign Up
                 </Button>
               </Link>
