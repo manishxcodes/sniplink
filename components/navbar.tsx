@@ -18,6 +18,7 @@ export function Navbar() {
   const checkAuth = async () => {
     try {
       const response = await getAuthStatus();
+      //console.log("navbar:isauth: ", response);
       setIsAuthenticated(response.authenticated || false);
     } catch (error) {
       setIsAuthenticated(false);

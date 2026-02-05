@@ -31,7 +31,7 @@ export function UrlCard({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.log("Failed to copy: ", err);
+      //console.log("Failed to copy: ", err);
     }
   };
   const handleDelete = async () => {
@@ -40,7 +40,7 @@ export function UrlCard({
       onDelete(shortCode);
       await handleDelete();
     } catch (err) {
-      console.error("Failed to delete:", err);
+      //console.error("Failed to delete:", err);
       setIsDeleting(false);
     }
   };
